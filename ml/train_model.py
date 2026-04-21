@@ -134,23 +134,24 @@ def train():
     if USE_XGB:
         print("[INFO] Training XGBoost...")
         model = XGBClassifier(
-            n_estimators=200,
-            max_depth=6,
+            n_estimators=100,
+            max_depth=4,
             learning_rate=0.1,
             subsample=0.8,
             colsample_bytree=0.8,
             use_label_encoder=False,
             eval_metric="logloss",
-            random_state=42
+            random_state=42,
+            n_jobs=1
         )
     else:
         print("[INFO] Training Random Forest...")
         model = RandomForestClassifier(
-            n_estimators=200,
-            max_depth=10,
+            n_estimators=100,
+            max_depth=8,
             min_samples_split=5,
             random_state=42,
-            n_jobs=-1
+            n_jobs=1
         )
 
     model.fit(X_train_scaled, y_train_res)
