@@ -8,4 +8,4 @@ cmds = ["pip install --upgrade pip", "pip install -r requirements.txt"]
 cmds = ["python ml/train_model.py"]
 
 [start]
-cmd = "gunicorn run:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
+cmd = "gunicorn run:app -c gunicorn.conf.py"
