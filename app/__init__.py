@@ -18,9 +18,11 @@ jwt = JWTManager()
 def create_app():
     app = Flask(__name__)
 
-    # Fix Railway postgres:// -> postgresql:// (SQLAlchemy requires postgresql://)
-    db_url = os.getenv("DATABASE_URL", "sqlite:///health_monitor.db")
-    if db_url.startswith("postgres://"):
+    # Fix DATABASE_URL for Railway/Heroku
+    db_url = os.getenv("DATABASE_URL", "")
+    if not db_url or db_url.startswith("http") or db_url.startswith("$"):
+        db_url = "sqlite:///health_monitor.db"
+    elif db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
 
     # Config
