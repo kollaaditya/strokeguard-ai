@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Health Monitor{% endblock %} | StrokeGuard AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet"/>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-gradient-primary sticky-top shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{{ url_for('auth.home') }}">
+      <i class="fas fa-heartbeat me-2 text-danger"></i>StrokeGuard <span class="text-warning">AI</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto align-items-center">
+        {% if current_user.is_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">
+              <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('dashboard.history') }}">
+              <i class="fas fa-history me-1"></i>History
+            </a>
+          </li>
+          <li class="nav-item ms-2">
+            <span class="nav-link text-warning">
+              <i class="fas fa-user-circle me-1"></i>{{ current_user.username }}
+            </span>
+          </li>
+          <li class="nav-item">
+            <a class="btn btn-outline-light btn-sm ms-2" href="{{ url_for('auth.logout') }}">
+              <i class="fas fa-sign-out-alt me-1"></i>Logout
+            </a>
+          </li>
+        {% else %}
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+          </li>
+          <li class="nav-item">
+            <a class="btn btn-warning btn-sm ms-2 fw-semibold" href="{{ url_for('auth.register') }}">Get Started</a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="container mt-3">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- Main Content -->
+<main>{% block content %}{% endblock %}</main>
+
+<!-- Footer -->
+<footer class="footer-dark mt-5 py-4">
+  <div class="container text-center">
+    <p class="mb-1 text-muted">
+      <i class="fas fa-heartbeat text-danger me-1"></i>
+      StrokeGuard AI &mdash; Real-Time Health Monitoring System
+    </p>
+    <small class="text-muted">
+      ⚠️ This tool is for informational purposes only. Always consult a medical professional.
+    </small>
+  </div>
+</footer>
+
+<!-- Emergency Modal -->
+<div class="modal fade" id="emergencyModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-danger">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title"><i class="fas fa-ambulance me-2"></i>Emergency Support</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <p class="fs-5 fw-semibold text-danger mb-3">🚨 Stroke Emergency?</p>
+        <p class="text-muted mb-4">Act FAST — Face drooping, Arm weakness, Speech difficulty, Time to call!</p>
+        <a href="tel:108" class="btn btn-danger btn-lg w-100 mb-3">
+          <i class="fas fa-phone me-2"></i>Call 108 (Ambulance)
+        </a>
+        {% if current_user.is_authenticated and current_user.emergency_contact %}
+        <a href="tel:{{ current_user.emergency_contact }}" class="btn btn-outline-danger w-100">
+          <i class="fas fa-user-friends me-2"></i>Call Emergency Contact
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Floating Emergency Button -->
+<button class="btn btn-danger emergency-fab" data-bs-toggle="modal" data-bs-target="#emergencyModal"
+        title="Emergency Support">
+  <i class="fas fa-ambulance"></i>
+</button>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+.camera-wrap { position: relative; background: #0d1b2a; border-radius: 12px; overflow: hidden; }
+.camera-wrap video,
+.camera-wrap canvas { display: block; width: 100%; border-radius: 12px; }
+.camera-wrap canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+.vitals-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 12px; }
+.vital-box { background: #0d1b2a; border-radius: 10px; padding: 10px 6px; text-align: center; }
+.vital-val { font-size: 1.5rem; font-weight: 700; line-height: 1.1; }
+.vital-lbl { font-size: 0.7rem; color: #adb5bd; margin-top: 2px; }
+.cam-status { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; display: inline-block; }
+.cam-status.scanning { background: rgba(255,193,7,0.15); color: #ffc107; }
+.cam-status.detected { background: rgba(40,167,69,0.15); color: #28a745; }
+.cam-status.error    { background: rgba(220,53,69,0.15);  color: #dc3545; }
+.heartbeat-line { height: 40px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+  <!-- Header -->
+  <div class="row mb-4 align-items-center">
+    <div class="col">
+      <h4 class="fw-bold mb-0">
+        <i class="fas fa-tachometer-alt text-primary me-2"></i>Health Dashboard
+      </h4>
+      <small class="text-muted">Real-time monitoring for {{ user.full_name or user.username }}</small>
+    </div>
+    <div class="col-auto d-flex gap-2 flex-wrap">
+      <button id="toggleCamBtn" class="btn btn-info btn-sm" onclick="toggleCamera()">
+        <i class="fas fa-camera me-1"></i>Start Camera
+      </button>
+      <button id="toggleSimBtn" class="btn btn-success btn-sm" onclick="toggleSimulation()">
+        <i class="fas fa-play me-1"></i>Start Live Monitor
+      </button>
+      <a href="{{ url_for('dashboard.history') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-history me-1"></i>History
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+      <div class="stat-card card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <i class="fas fa-chart-pie text-primary fa-2x mb-2"></i>
+          <div class="fs-4 fw-bold" id="statTotal">—</div>
+          <small class="text-muted">Total Checks</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+          <div class="fs-4 fw-bold text-success" id="statLow">—</div>
+          <small class="text-muted">Low Risk</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <i class="fas fa-exclamation-triangle text-warning fa-2x mb-2"></i>
+          <div class="fs-4 fw-bold text-warning" id="statMedium">—</div>
+          <small class="text-muted">Medium Risk</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <i class="fas fa-times-circle text-danger fa-2x mb-2"></i>
+          <div class="fs-4 fw-bold text-danger" id="statHigh">—</div>
+          <small class="text-muted">High Risk</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- LEFT COLUMN -->
+    <div class="col-lg-4">
+
+      <!-- Camera Card -->
+      <div class="card border-0 shadow-sm mb-4" id="cameraCard">
+        <div class="card-header bg-dark border-0 pt-3 pb-2 d-flex justify-content-between align-items-center">
+          <h6 class="fw-bold mb-0 text-white">
+            <i class="fas fa-camera me-2 text-info"></i>Live Camera Vitals
+          </h6>
+          <span class="cam-status scanning" id="camStatus">● Offline</span>
+        </div>
+        <div class="card-body bg-dark p-2">
+          <!-- Camera feed -->
+          <div class="camera-wrap">
+            <video id="camVideo" autoplay muted playsinline style="min-height:180px;background:#000;"></video>
+            <canvas id="camOverlay"></canvas>
+          </div>
+
+          <!-- Vitals from camera -->
+          <div class="vitals-row">
+            <div class="vital-box">
+              <div class="vital-val text-danger" id="vBpm">—</div>
+              <div class="vital-lbl">❤ Heart Rate<br><span style="font-size:0.65rem">BPM</span></div>
+            </div>
+            <div class="vital-box">
+              <div class="vital-val text-info" id="vBreath">—</div>
+              <div class="vital-lbl">🌬 Breathing<br><span style="font-size:0.65rem">br/min</span></div>
+            </div>
+            <div class="vital-box">
+              <div class="vital-val text-primary" id="vSpo2">—</div>
+              <div class="vital-lbl">💧 SpO₂<br><span style="font-size:0.65rem">%</span></div>
+            </div>
+          </div>
+
+          <!-- Heartbeat waveform -->
+          <canvas id="heartbeatChart" class="heartbeat-line mt-2 w-100" height="40"></canvas>
+
+          <p class="text-muted mt-2 mb-0" style="font-size:0.7rem; text-align:center;">
+            ⚠️ Camera vitals are estimates. Not a medical device.
+          </p>
+          <div id="camHint" class="alert alert-warning py-2 px-3 mt-2 mb-0" style="display:none;font-size:0.75rem">
+            🔒 Camera requires HTTPS.<br>
+            Open: <a href="javascript:void(0)" onclick="redirectHttps()"><strong>https://{{ request.host }}</strong></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk Gauge -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 pt-3 pb-0">
+          <h6 class="fw-bold mb-0"><i class="fas fa-tachometer-alt me-2 text-primary"></i>Stroke Risk Meter</h6>
+        </div>
+        <div class="card-body text-center py-3">
+          <canvas id="riskGauge" width="260" height="150"></canvas>
+          <div id="riskBadge" class="risk-badge mt-2">—</div>
+          <div class="text-muted small mt-1" id="lastUpdated">Not started</div>
+        </div>
+      </div>
+
+      <!-- Advice Panel -->
+      <div class="card border-0 shadow-sm" id="adviceCard" style="display:none!important">
+        <div class="card-header bg-white border-0 pt-3 pb-0">
+          <h6 class="fw-bold mb-0"><i class="fas fa-notes-medical me-2 text-success"></i>Health Advice</h6>
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0" id="adviceList"></ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MIDDLE COLUMN -->
+    <div class="col-lg-4">
+
+      <!-- Live Metrics -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 pt-3 pb-0">
+          <h6 class="fw-bold mb-0"><i class="fas fa-heartbeat me-2 text-danger"></i>Live Health Metrics</h6>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="metric-box rounded-3 p-3 text-center bg-light">
+                <div class="metric-value text-danger fw-bold fs-4" id="mBpm">—</div>
+                <small class="text-muted">Heart Rate (BPM)</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="metric-box rounded-3 p-3 text-center bg-light">
+                <div class="metric-value text-info fw-bold fs-4" id="mBreath">—</div>
+                <small class="text-muted">Breathing (br/min)</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="metric-box rounded-3 p-3 text-center bg-light">
+                <div class="metric-value text-primary fw-bold fs-4" id="mGlucose">—</div>
+                <small class="text-muted">Glucose (mg/dL)</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="metric-box rounded-3 p-3 text-center bg-light">
+                <div class="metric-value text-info fw-bold fs-4" id="mBmi">—</div>
+                <small class="text-muted">BMI</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="metric-box rounded-3 p-3 text-center bg-light">
+                <div class="metric-value text-warning fw-bold fs-4" id="mAge">—</div>
+                <small class="text-muted">Age</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="metric-box rounded-3 p-3 text-center bg-light">
+                <div class="metric-value fw-bold fs-4" id="mHypertension">—</div>
+                <small class="text-muted">Hypertension</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk Trend Chart -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
+          <h6 class="fw-bold mb-0"><i class="fas fa-chart-line me-2 text-info"></i>Risk Trend</h6>
+          <span class="badge bg-primary" id="liveIndicator" style="display:none">● LIVE</span>
+        </div>
+        <div class="card-body">
+          <canvas id="trendChart" height="180"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="col-lg-4">
+
+      <!-- Manual Input Form -->
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 pt-3 pb-0">
+          <h6 class="fw-bold mb-0"><i class="fas fa-edit me-2 text-secondary"></i>Manual Health Input</h6>
+        </div>
+        <div class="card-body">
+          <form id="manualForm">
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Age</label>
+                <input type="number" class="form-control form-control-sm" id="fAge" value="{{ user.age or 45 }}" min="1" max="120"/>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Gender</label>
+                <select class="form-select form-select-sm" id="fGender">
+                  <option value="Male" {% if user.gender == 'Male' %}selected{% endif %}>Male</option>
+                  <option value="Female" {% if user.gender == 'Female' %}selected{% endif %}>Female</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Glucose (mg/dL)</label>
+                <input type="number" class="form-control form-control-sm" id="fGlucose" value="100" min="50" max="400" step="0.1"/>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">BMI</label>
+                <input type="number" class="form-control form-control-sm" id="fBmi" value="25" min="10" max="60" step="0.1"/>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Hypertension</label>
+                <select class="form-select form-select-sm" id="fHypertension">
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Heart Disease</label>
+                <select class="form-select form-select-sm" id="fHeartDisease">
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Ever Married</label>
+                <select class="form-select form-select-sm" id="fMarried">
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Work Type</label>
+                <select class="form-select form-select-sm" id="fWorkType">
+                  <option value="Private">Private</option>
+                  <option value="Self-employed">Self-employed</option>
+                  <option value="Govt_job">Govt Job</option>
+                  <option value="children">Children</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-semibold">Smoking Status</label>
+                <select class="form-select form-select-sm" id="fSmoking">
+                  <option value="never smoked">Never Smoked</option>
+                  <option value="formerly smoked">Formerly Smoked</option>
+                  <option value="smokes">Smokes</option>
+                </select>
+              </div>
+            </div>
+            <div class="mt-3 d-flex gap-2">
+              <button type="button" class="btn btn-primary btn-sm px-4" onclick="submitManual()">
+                <i class="fas fa-search me-1"></i>Predict Risk
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetForm()">
+                <i class="fas fa-undo me-1"></i>Reset
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- HIGH RISK Alert Modal -->
+<div class="modal fade" id="highRiskModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-danger">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>⚠️ HIGH STROKE RISK DETECTED</h5>
+      </div>
+      <div class="modal-body text-center py-4">
+        <div class="display-1 mb-3">🚨</div>
+        <h4 class="text-danger fw-bold">Immediate Action Required!</h4>
+        <p class="text-muted" id="highRiskMsg">Your stroke risk probability is critically high.</p>
+        <div class="d-grid gap-2 mt-4">
+          <a href="tel:108" class="btn btn-danger btn-lg">
+            <i class="fas fa-phone me-2"></i>Call 108 Emergency
+          </a>
+          <button class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            I Understand — Dismiss
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- face-api.js for face detection -->
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script src="{{ url_for('static', filename='js/vitals.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=mysql+pymysql://healthuser:healthpass@db:3306/health_monitor
+      - SECRET_KEY=change-me-in-production
+      - JWT_SECRET_KEY=change-jwt-in-production
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./ml/model:/app/ml/model
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: health_monitor
+      MYSQL_USER: healthuser
+      MYSQL_PASSWORD: healthpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_data:

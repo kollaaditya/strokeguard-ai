@@ -1,0 +1,145 @@
+/* ===== Global ===== */
+* { box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #f8f9fa; color: #212529; }
+
+/* ===== Navbar ===== */
+.bg-gradient-primary { background: linear-gradient(135deg, #0d1b2a 0%, #1a3a5c 100%) !important; }
+
+/* ===== Hero Section ===== */
+.hero-section {
+  background: linear-gradient(135deg, #0d1b2a 0%, #1a3a5c 50%, #0d6efd 100%);
+  min-height: 85vh;
+  display: flex;
+  align-items: center;
+  padding: 60px 0;
+}
+.min-vh-75 { min-height: 75vh; }
+.hero-card {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px;
+  padding: 30px;
+  max-width: 380px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card { transition: transform 0.2s, box-shadow 0.2s; border-radius: 16px !important; }
+.feature-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.12) !important; }
+.feature-icon { width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; }
+
+/* ===== Risk Cards ===== */
+.risk-card.low { background: rgba(40,167,69,0.08); border: 2px solid rgba(40,167,69,0.3); }
+.risk-card.medium { background: rgba(255,193,7,0.08); border: 2px solid rgba(255,193,7,0.3); }
+.risk-card.high { background: rgba(220,53,69,0.08); border: 2px solid rgba(220,53,69,0.3); }
+
+/* ===== CTA Section ===== */
+.cta-section { background: linear-gradient(135deg, #dc3545, #c82333); }
+
+/* ===== Auth Pages ===== */
+.auth-page { background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%); }
+.auth-card { border-radius: 20px !important; }
+
+/* ===== Dashboard ===== */
+.stat-card { border-radius: 16px !important; transition: transform 0.2s; }
+.stat-card:hover { transform: translateY(-2px); }
+
+.metric-box { transition: background 0.3s; }
+.metric-value { font-size: 1.6rem; transition: color 0.3s; }
+
+/* ===== Risk Badge ===== */
+.risk-badge {
+  display: inline-block;
+  padding: 8px 24px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  transition: all 0.4s;
+}
+.risk-badge.LOW { background: rgba(40,167,69,0.15); color: #28a745; border: 2px solid #28a745; }
+.risk-badge.MEDIUM { background: rgba(255,193,7,0.15); color: #856404; border: 2px solid #ffc107; }
+.risk-badge.HIGH { background: rgba(220,53,69,0.15); color: #dc3545; border: 2px solid #dc3545; animation: pulse-danger 1s infinite; }
+
+@keyframes pulse-danger {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220,53,69,0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(220,53,69,0); }
+}
+
+/* ===== Advice List ===== */
+#adviceList li {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.9rem;
+}
+#adviceList li:last-child { border-bottom: none; }
+#adviceList li::before { content: "→ "; color: #0d6efd; font-weight: bold; }
+
+/* ===== Emergency FAB ===== */
+.emergency-fab {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  font-size: 1.3rem;
+  box-shadow: 0 4px 20px rgba(220,53,69,0.5);
+  z-index: 1050;
+  animation: pulse-fab 2s infinite;
+}
+@keyframes pulse-fab {
+  0%, 100% { box-shadow: 0 4px 20px rgba(220,53,69,0.5); }
+  50% { box-shadow: 0 4px 30px rgba(220,53,69,0.8); }
+}
+
+/* ===== Footer ===== */
+.footer-dark { background: #0d1b2a; border-top: 1px solid #1a3a5c; }
+
+/* ===== Live Indicator ===== */
+#liveIndicator { animation: blink 1.5s infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* ===== Cards ===== */
+.card { border-radius: 16px !important; }
+.card-header { border-radius: 16px 16px 0 0 !important; }
+
+/* ===== Table ===== */
+.table th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: #6c757d; }
+.table td { vertical-align: middle; font-size: 0.9rem; }
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #0d6efd; border-radius: 3px; }
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .hero-section { min-height: auto; padding: 40px 0; }
+  .emergency-fab { bottom: 20px; right: 20px; width: 50px; height: 50px; font-size: 1.1rem; }
+}
+
+/* ===== Camera Panel ===== */
+#cameraCard .card-header { border-radius: 16px 16px 0 0 !important; }
+.camera-wrap { position: relative; background: #000; border-radius: 12px; overflow: hidden; min-height: 180px; }
+.camera-wrap video  { display: block; width: 100%; border-radius: 12px; }
+.camera-wrap canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; border-radius: 12px; }
+
+.vitals-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 10px; }
+.vital-box  { background: #111d2e; border-radius: 10px; padding: 10px 4px; text-align: center; border: 1px solid #1a3a5c; }
+.vital-val  { font-size: 1.4rem; font-weight: 700; line-height: 1.1; transition: color 0.4s; }
+.vital-lbl  { font-size: 0.68rem; color: #6c8ebf; margin-top: 3px; }
+
+/* Heartbeat waveform */
+#heartbeatChart { border-radius: 8px; background: #0d1b2a; display: block; }
+
+/* Camera status badge */
+.cam-status { font-size: 0.72rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+.cam-status.scanning { background: rgba(255,193,7,0.15); color: #ffc107; }
+.cam-status.detected { background: rgba(40,167,69,0.15);  color: #28a745; }
+.cam-status.error    { background: rgba(220,53,69,0.15);   color: #dc3545; }
+
+/* BPM color states */
+.vital-val.text-success { color: #28a745 !important; }
+.vital-val.text-warning { color: #ffc107 !important; }
+.vital-val.text-danger  { color: #dc3545 !important; }
