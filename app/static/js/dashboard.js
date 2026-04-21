@@ -45,23 +45,35 @@ async function startCamera() {
       liveSpO2   = v.spo2   || liveSpO2;
 
       // Update camera vitals panel
-      document.getElementById('vBpm').textContent    = liveBpm    || '—';
-      document.getElementById('vBreath').textContent = liveBreath || '—';
-      document.getElementById('vSpo2').textContent   = liveSpO2   || '—';
+      if (v.live === false) {
+        document.getElementById('vBpm').textContent    = '⚠ Spoof';
+        document.getElementById('vBreath').textContent = '—';
+        document.getElementById('vSpo2').textContent   = '—';
+        document.getElementById('mBpm').textContent    = '—';
+        document.getElementById('mBreath').textContent = '—';
+        return;
+      }
 
-      // Update metrics panel
+      document.getElementById('vBpm').textContent    = liveBpm    || '…';
+      document.getElementById('vBreath').textContent = liveBreath || '…';
+      document.getElementById('vSpo2').textContent   = liveSpO2   || '…';
       document.getElementById('mBpm').textContent    = liveBpm    || '—';
       document.getElementById('mBreath').textContent = liveBreath || '—';
 
-      // Feed heartbeat waveform
       pushHeartbeat(liveBpm);
 
-      // Color BPM by range
+      // Color BPM
       const bpmEl = document.getElementById('vBpm');
       bpmEl.className = 'vital-val ' + (
         liveBpm > 100 ? 'text-danger' :
         liveBpm < 60  ? 'text-warning' : 'text-success'
       );
+
+      // Auto-predict when live monitor is NOT running but camera has data
+      if (!isSimulating && liveBpm > 0) {
+        clearTimeout(window._autoPredTimer);
+        window._autoPredTimer = setTimeout(runPrediction, 500);
+      }
     },
     // onFaceStatus
     (status, box) => {
@@ -300,16 +312,24 @@ function stopSimulation() {
 
 async function runPrediction() {
   try {
-    const simRes = await fetch('/api/simulate');
-    const data   = await simRes.json();
+    let data;
 
-    // Inject real camera vitals if available
-    if (isCameraOn && liveBpm > 0) {
+    if (isCameraOn && liveBpm > 0 && VITALS.hasFace()) {
+      // Use live camera data directly — no simulation needed
+      const simRes = await fetch('/api/simulate');
+      data = await simRes.json();
+      // Override with real camera vitals
       data._bpm    = liveBpm;
       data._breath = liveBreath;
       data._spo2   = liveSpO2;
-      // Adjust hypertension hint from high BPM
+      // High BPM → flag hypertension
       if (liveBpm > 100) data.hypertension = 1;
+      // Low SpO2 → flag heart disease risk
+      if (liveSpO2 < 95) data.heart_disease = 1;
+    } else {
+      // No camera — use simulation
+      const simRes = await fetch('/api/simulate');
+      data = await simRes.json();
     }
 
     const predRes = await fetch('/api/predict', {
@@ -318,7 +338,6 @@ async function runPrediction() {
       body: JSON.stringify(data)
     });
     const result = await predRes.json();
-
     if (result.error) { console.error('Server error:', result.error); stopSimulation(); return; }
     updateUI(data, result);
   } catch (err) {

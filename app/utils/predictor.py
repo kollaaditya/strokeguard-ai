@@ -57,7 +57,6 @@ def get_advice(risk_level: str, data: dict) -> list:
     }
     advice = list(base[risk_level])
 
-    # Personalized additions
     if data.get("hypertension") == 1:
         advice.append("Take your blood pressure medication as prescribed.")
     if data.get("heart_disease") == 1:
@@ -68,6 +67,19 @@ def get_advice(risk_level: str, data: dict) -> list:
         advice.append("Work on weight management with a nutritionist.")
     if data.get("smoking_status") in ["smokes", "1"]:
         advice.append("Quit smoking — it significantly increases stroke risk.")
+
+    # Live vitals advice
+    bpm  = float(data.get("_bpm",  0))
+    spo2 = float(data.get("_spo2", 99))
+    br   = float(data.get("_breath", 0))
+    if bpm > 100:
+        advice.append(f"💓 High heart rate detected ({int(bpm)} BPM) — rest immediately.")
+    elif bpm > 0 and bpm < 50:
+        advice.append(f"💓 Low heart rate detected ({int(bpm)} BPM) — consult a doctor.")
+    if spo2 < 95:
+        advice.append(f"💧 Low SpO₂ ({int(spo2)}%) — seek oxygen support immediately.")
+    if br > 25:
+        advice.append(f"🌬 Rapid breathing ({int(br)} br/min) — try to calm down and breathe slowly.")
 
     return advice
 
@@ -116,11 +128,37 @@ def predict(data: dict) -> dict:
     X = np.array(row).reshape(1, -1)
     X_scaled = scaler.transform(X)
     prob = float(model.predict_proba(X_scaled)[0][1])
-    risk = classify_risk(prob)
+
+    # Adjust probability using live camera vitals
+    bpm    = float(data.get("_bpm",    0))
+    spo2   = float(data.get("_spo2",   99))
+    breath = float(data.get("_breath", 0))
+
+    if bpm > 0:
+        # Tachycardia (>100) or bradycardia (<50) increases risk
+        if bpm > 100:
+            prob = min(0.99, prob + 0.08 * min((bpm - 100) / 40, 1.0))
+        elif bpm < 50:
+            prob = min(0.99, prob + 0.06)
+
+    if spo2 > 0 and spo2 < 95:
+        # Low SpO2 significantly increases stroke risk
+        prob = min(0.99, prob + 0.10 * (95 - spo2) / 5)
+
+    if breath > 25:
+        # Rapid breathing increases risk
+        prob = min(0.99, prob + 0.04)
+
+    risk   = classify_risk(prob)
     advice = get_advice(risk, data)
 
     return {
         "probability": round(prob * 100, 2),
-        "risk_level": risk,
-        "advice": advice,
+        "risk_level":  risk,
+        "advice":      advice,
+        "live_vitals": {
+            "bpm":    int(bpm)    if bpm    > 0 else None,
+            "spo2":   int(spo2)   if spo2   > 0 else None,
+            "breath": int(breath) if breath > 0 else None,
+        }
     }
