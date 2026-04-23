@@ -43,36 +43,39 @@ async function startCamera() {
       liveBpm    = v.bpm    || liveBpm;
       liveBreath = v.breath || liveBreath;
       liveSpO2   = v.spo2   || liveSpO2;
-      const liveSweat = v.sweat || false;
 
       if (v.live === false) {
-        document.getElementById('vBpm').textContent    = '⚠ Spoof';
-        document.getElementById('vBreath').textContent = '—';
-        document.getElementById('vSpo2').textContent   = '—';
-        document.getElementById('vSweat').textContent  = '—';
+        ['vBpm','vBreath','vSpo2','vSweat'].forEach(id => {
+          document.getElementById(id).textContent = id==='vBpm' ? '⚠ Spoof' : '—';
+        });
         document.getElementById('mBpm').textContent    = '—';
         document.getElementById('mBreath').textContent = '—';
         return;
       }
 
+      // Update vitals panel
       document.getElementById('vBpm').textContent    = liveBpm    || '…';
       document.getElementById('vBreath').textContent = liveBreath || '…';
       document.getElementById('vSpo2').textContent   = liveSpO2   || '…';
-      document.getElementById('vSweat').textContent  = liveSweat  ? '⚠ YES' : 'No';
-      document.getElementById('vSweat').className    = 'vital-val ' + (liveSweat ? 'text-warning' : 'text-success');
+      document.getElementById('vSweat').textContent  = v.sweat    ? '⚠ YES' : 'No';
+      document.getElementById('vSweat').className    = 'vital-val '+(v.sweat?'text-warning':'text-success');
       document.getElementById('mBpm').textContent    = liveBpm    || '—';
       document.getElementById('mBreath').textContent = liveBreath || '—';
 
+      // Auto-check symptom boxes from camera detection
+      if (v.sweat)     document.getElementById('sSweating').checked     = true;
+      if (v.paleSkin)  document.getElementById('sPaleSkin').checked      = true;
+      if (v.dizziness) document.getElementById('sDizziness').checked     = true;
+      if (v.faceDrop)  document.getElementById('sFaceDrooping').checked  = true;
+      if (v.confusion) document.getElementById('sConfusion').checked     = true;
+      if (liveBpm > 100) document.getElementById('sRapidHeart').checked  = true;
+      if (liveBreath > 25) document.getElementById('sNausea').checked    = true;
+
       pushHeartbeat(liveBpm);
 
-      // Color BPM
       const bpmEl = document.getElementById('vBpm');
-      bpmEl.className = 'vital-val ' + (
-        liveBpm > 100 ? 'text-danger' :
-        liveBpm < 60  ? 'text-warning' : 'text-success'
-      );
+      bpmEl.className = 'vital-val '+(liveBpm>100?'text-danger':liveBpm<60?'text-warning':'text-success');
 
-      // Auto-predict only when live monitor is running
       if (isSimulating && liveBpm > 0) {
         clearTimeout(window._autoPredTimer);
         window._autoPredTimer = setTimeout(runPrediction, 3000);
@@ -378,7 +381,11 @@ async function submitManual() {
     data._bpm    = liveBpm;
     data._breath = liveBreath;
     data._spo2   = liveSpO2;
-    data._sweat  = VITALS.isRunning() && document.getElementById('vSweat').textContent.includes('YES') ? 1 : 0;
+    data._sweat  = VITALS.getSweat()    ? 1 : 0;
+    data._pale   = VITALS.getPaleSkin() ? 1 : 0;
+    data._dizzy  = VITALS.getDizziness()? 1 : 0;
+    data._fdrop  = VITALS.getFaceDrop() ? 1 : 0;
+    data._confus = VITALS.getConfusion()? 1 : 0;
     if (liveBpm > 120) data.hypertension = 1;
   }
 

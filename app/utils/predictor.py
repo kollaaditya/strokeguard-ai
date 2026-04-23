@@ -168,7 +168,12 @@ def predict(data: dict) -> dict:
         int(data.get("sym_sweating",          0)) * 0.07 +
         int(data.get("sym_pale_skin",         0)) * 0.06 +
         int(data.get("sym_rapid_heart",       0)) * 0.07 +
-        int(data.get("_sweat",                0)) * 0.06   # camera-detected sweat
+        # Camera-detected symptoms
+        int(data.get("_sweat",  0)) * 0.06 +
+        int(data.get("_pale",   0)) * 0.05 +
+        int(data.get("_dizzy",  0)) * 0.06 +
+        int(data.get("_fdrop",  0)) * 0.15 +   # face drooping is critical
+        int(data.get("_confus", 0)) * 0.08
     )
     prob = min(0.97, prob + fast_score)
 
