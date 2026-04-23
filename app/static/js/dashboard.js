@@ -69,10 +69,10 @@ async function startCamera() {
         liveBpm < 60  ? 'text-warning' : 'text-success'
       );
 
-      // Auto-predict when live monitor is NOT running but camera has data
-      if (!isSimulating && liveBpm > 0) {
+      // Auto-predict only when live monitor is running
+      if (isSimulating && liveBpm > 0) {
         clearTimeout(window._autoPredTimer);
-        window._autoPredTimer = setTimeout(runPrediction, 500);
+        window._autoPredTimer = setTimeout(runPrediction, 3000);
       }
     },
     // onFaceStatus
@@ -315,17 +315,13 @@ async function runPrediction() {
     let data;
 
     if (isCameraOn && liveBpm > 0 && VITALS.hasFace()) {
-      // Use live camera data directly — no simulation needed
       const simRes = await fetch('/api/simulate');
       data = await simRes.json();
-      // Override with real camera vitals
       data._bpm    = liveBpm;
       data._breath = liveBreath;
       data._spo2   = liveSpO2;
-      // High BPM → flag hypertension
-      if (liveBpm > 100) data.hypertension = 1;
-      // Low SpO2 → flag heart disease risk
-      if (liveSpO2 < 95) data.heart_disease = 1;
+      // Only flag hypertension for severely high BPM (>120)
+      if (liveBpm > 120) data.hypertension = 1;
     } else {
       // No camera — use simulation
       const simRes = await fetch('/api/simulate');
@@ -361,12 +357,11 @@ async function submitManual() {
     smoking_status:    document.getElementById('fSmoking').value,
   };
 
-  // Inject camera vitals if available
   if (isCameraOn && liveBpm > 0) {
     data._bpm    = liveBpm;
     data._breath = liveBreath;
     data._spo2   = liveSpO2;
-    if (liveBpm > 100) data.hypertension = 1;
+    if (liveBpm > 120) data.hypertension = 1;
   }
 
   try {

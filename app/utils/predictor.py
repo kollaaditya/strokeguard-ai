@@ -129,25 +129,23 @@ def predict(data: dict) -> dict:
     X_scaled = scaler.transform(X)
     prob = float(model.predict_proba(X_scaled)[0][1])
 
-    # Adjust probability using live camera vitals
+    # Fine-tune with live camera vitals only when clearly abnormal
     bpm    = float(data.get("_bpm",    0))
     spo2   = float(data.get("_spo2",   99))
     breath = float(data.get("_breath", 0))
 
     if bpm > 0:
-        # Tachycardia (>100) or bradycardia (<50) increases risk
-        if bpm > 100:
-            prob = min(0.99, prob + 0.08 * min((bpm - 100) / 40, 1.0))
-        elif bpm < 50:
-            prob = min(0.99, prob + 0.06)
+        if bpm > 120:                          # severe tachycardia only
+            prob = min(0.95, prob + 0.05)
+        elif bpm < 45:                         # severe bradycardia only
+            prob = min(0.95, prob + 0.04)
+        # normal range 50-100: no adjustment
 
-    if spo2 > 0 and spo2 < 95:
-        # Low SpO2 significantly increases stroke risk
-        prob = min(0.99, prob + 0.10 * (95 - spo2) / 5)
+    if spo2 > 0 and spo2 < 92:               # only dangerously low SpO2
+        prob = min(0.95, prob + 0.06)
 
-    if breath > 25:
-        # Rapid breathing increases risk
-        prob = min(0.99, prob + 0.04)
+    if breath > 0 and breath > 28:            # only very rapid breathing
+        prob = min(0.95, prob + 0.03)
 
     risk   = classify_risk(prob)
     advice = get_advice(risk, data)
