@@ -93,7 +93,13 @@ def get_advice(risk_level: str, data: dict) -> list:
         "sym_dizziness":         "Dizziness — sit down immediately to avoid falling.",
         "sym_chest_pain":        "Chest pain — could indicate cardiac event alongside stroke.",
         "sym_nausea":            "Nausea with other symptoms — seek medical attention.",
+        "sym_sweating":          "Cold sweating — combined with other symptoms indicates cardiac/stroke emergency.",
+        "sym_pale_skin":         "Pale/clammy skin — sign of shock or severe cardiac event.",
+        "sym_rapid_heart":       "Rapid heartbeat — could indicate arrhythmia increasing stroke risk.",
     }
+    # Camera-detected sweat
+    if int(data.get("_sweat", 0)) == 1:
+        advice.append("⚠️ Camera detected sweating on face — monitor closely.")
     for key, msg in sym_map.items():
         if int(data.get(key, 0)) == 1:
             advice.append(f"⚠️ {msg}")
@@ -158,7 +164,11 @@ def predict(data: dict) -> dict:
         int(data.get("sym_numbness",          0)) * 0.08 +
         int(data.get("sym_dizziness",         0)) * 0.06 +
         int(data.get("sym_chest_pain",        0)) * 0.05 +
-        int(data.get("sym_nausea",            0)) * 0.03
+        int(data.get("sym_nausea",            0)) * 0.03 +
+        int(data.get("sym_sweating",          0)) * 0.07 +
+        int(data.get("sym_pale_skin",         0)) * 0.06 +
+        int(data.get("sym_rapid_heart",       0)) * 0.07 +
+        int(data.get("_sweat",                0)) * 0.06   # camera-detected sweat
     )
     prob = min(0.97, prob + fast_score)
 

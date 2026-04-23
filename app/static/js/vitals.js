@@ -21,14 +21,17 @@ const VITALS = (() => {
 
   let greenBuf  = [];
   let yPosBuf   = [];
-  let prevPixels = null;   // for motion liveness check
+  let prevPixels = null;
+  let shineBuf   = [];   // brightness samples for sweat detection
 
-  let currentBPM    = 0;
-  let currentBreath = 0;
-  let currentSpO2   = 98;
-  let faceDetected  = false;
-  let isLive        = false;  // liveness flag
-  let livenessScore = 0;      // 0-100
+  let currentBPM      = 0;
+  let currentBreath   = 0;
+  let currentSpO2     = 98;
+  let currentSweat    = false;  // sweat detection flag
+  let sweatScore      = 0;      // 0-100
+  let faceDetected    = false;
+  let isLive          = false;
+  let livenessScore   = 0;
 
   // face-api state
   let faceApiReady  = false;
@@ -109,9 +112,9 @@ const VITALS = (() => {
     captureCtx = captureCanvas.getContext('2d', { willReadFrequently: true });
 
     running = true;
-    greenBuf = []; yPosBuf = []; prevPixels = null;
+    greenBuf = []; yPosBuf = []; prevPixels = null; shineBuf = [];
     currentBPM = 0; currentBreath = 0;
-    isLive = false; livenessScore = 0;
+    isLive = false; livenessScore = 0; currentSweat = false; sweatScore = 0;
 
     // Try to load face-api in background (non-blocking)
     tryLoadFaceApi();
@@ -136,10 +139,10 @@ const VITALS = (() => {
     if (overlayCtx && overlayCanvas) {
       overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
     }
-    greenBuf = []; yPosBuf = []; prevPixels = null;
+    greenBuf = []; yPosBuf = []; prevPixels = null; shineBuf = [];
     currentBPM = 0; currentBreath = 0;
     faceDetected = false; faceBox = null;
-    isLive = false; livenessScore = 0;
+    isLive = false; livenessScore = 0; currentSweat = false; sweatScore = 0;
   }
 
   // ── Capture frame ────────────────────────────────────────────────
@@ -208,6 +211,18 @@ const VITALS = (() => {
     const g    = _meanChannel(roiData.data, 1);
     const faceY = faceBox ? (faceBox.y + faceBox.height / 2) : ch / 2;
 
+    // Sweat detection — measure skin shine (high brightness + high R channel)
+    const r    = _meanChannel(roiData.data, 0);
+    const b    = _meanChannel(roiData.data, 2);
+    const brightness = (r + g + b) / 3;
+    // Sweaty skin: high brightness, R≈G≈B (washed out), low color saturation
+    const maxC = Math.max(r, g, b);
+    const minC = Math.min(r, g, b);
+    const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
+    // High brightness + low saturation = shiny/sweaty skin
+    const shineVal = brightness > 160 && saturation < 0.15 ? brightness : 0;
+    shineBuf.push(shineVal);
+    if (shineBuf.length > BUF_SIZE) shineBuf.shift();
     // Liveness check — get full frame for motion detection
     let fullData;
     try { fullData = captureCtx.getImageData(0, 0, cw, ch); }
@@ -311,11 +326,23 @@ const VITALS = (() => {
     const pi = dc > 0 ? (ac / dc) * 100 : 1.5;
     currentSpO2 = Math.min(100, Math.max(94, Math.round(98 + (pi - 1.5) * 1.5)));
 
+    // Sweat detection — sustained high shine = sweating
+    if (shineBuf.length >= FPS * 3) {
+      const shineAvg = _mean(shineBuf.slice(-FPS * 3));
+      const shineCount = shineBuf.slice(-FPS * 3).filter(v => v > 0).length;
+      const shinePct = shineCount / (FPS * 3);
+      // >40% of frames show shine = sweating detected
+      sweatScore = Math.round(shinePct * 100);
+      currentSweat = shinePct > 0.40;
+    }
+
     if (onVitalsUpdate) {
       onVitalsUpdate({
         bpm:     isLive ? currentBPM    : 0,
         breath:  isLive ? currentBreath : 0,
         spo2:    isLive ? currentSpO2   : 0,
+        sweat:   isLive ? currentSweat  : false,
+        sweatScore: sweatScore,
         live:    isLive
       });
     }
@@ -383,6 +410,8 @@ const VITALS = (() => {
       _label(overlayCtx, `❤ ${currentBPM || '…'} BPM`,       6,  6, '#ff6b6b');
       _label(overlayCtx, `🌬 ${currentBreath || '…'} br/min`, 6, 36, '#74c0fc');
       _label(overlayCtx, `💧 SpO₂ ${currentSpO2}%`,           6, 66, '#a9e34b');
+      _label(overlayCtx, `💦 Sweat: ${currentSweat ? 'YES ⚠' : 'No'}`, 6, 96,
+             currentSweat ? '#ffc107' : '#adb5bd');
 
     } else {
       // Scanning box animation

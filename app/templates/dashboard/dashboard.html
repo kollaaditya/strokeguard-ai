@@ -104,7 +104,7 @@
           </div>
 
           <!-- Vitals from camera -->
-          <div class="vitals-row">
+          <div class="vitals-row" style="grid-template-columns:repeat(4,1fr)">
             <div class="vital-box">
               <div class="vital-val text-danger" id="vBpm">—</div>
               <div class="vital-lbl">❤ Heart Rate<br><span style="font-size:0.65rem">BPM</span></div>
@@ -116,6 +116,10 @@
             <div class="vital-box">
               <div class="vital-val text-primary" id="vSpo2">—</div>
               <div class="vital-lbl">💧 SpO₂<br><span style="font-size:0.65rem">%</span></div>
+            </div>
+            <div class="vital-box">
+              <div class="vital-val text-warning" id="vSweat">—</div>
+              <div class="vital-lbl">💦 Sweat<br><span style="font-size:0.65rem">detect</span></div>
             </div>
           </div>
 
@@ -353,6 +357,24 @@
                 <div class="form-check symptom-check">
                   <input class="form-check-input" type="checkbox" id="sNausea" value="1">
                   <label class="form-check-label small" for="sNausea">🤢 Nausea</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check symptom-check">
+                  <input class="form-check-input" type="checkbox" id="sSweating" value="1">
+                  <label class="form-check-label small" for="sSweating">💧 Sweating</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check symptom-check">
+                  <input class="form-check-input" type="checkbox" id="sPaleSkin" value="1">
+                  <label class="form-check-label small" for="sPaleSkin">😰 Pale/Clammy Skin</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check symptom-check">
+                  <input class="form-check-input" type="checkbox" id="sRapidHeart" value="1">
+                  <label class="form-check-label small" for="sRapidHeart">💓 Rapid Heartbeat</label>
                 </div>
               </div>
             </div>

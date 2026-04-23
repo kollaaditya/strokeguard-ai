@@ -43,12 +43,13 @@ async function startCamera() {
       liveBpm    = v.bpm    || liveBpm;
       liveBreath = v.breath || liveBreath;
       liveSpO2   = v.spo2   || liveSpO2;
+      const liveSweat = v.sweat || false;
 
-      // Update camera vitals panel
       if (v.live === false) {
         document.getElementById('vBpm').textContent    = '⚠ Spoof';
         document.getElementById('vBreath').textContent = '—';
         document.getElementById('vSpo2').textContent   = '—';
+        document.getElementById('vSweat').textContent  = '—';
         document.getElementById('mBpm').textContent    = '—';
         document.getElementById('mBreath').textContent = '—';
         return;
@@ -57,6 +58,8 @@ async function startCamera() {
       document.getElementById('vBpm').textContent    = liveBpm    || '…';
       document.getElementById('vBreath').textContent = liveBreath || '…';
       document.getElementById('vSpo2').textContent   = liveSpO2   || '…';
+      document.getElementById('vSweat').textContent  = liveSweat  ? '⚠ YES' : 'No';
+      document.getElementById('vSweat').className    = 'vital-val ' + (liveSweat ? 'text-warning' : 'text-success');
       document.getElementById('mBpm').textContent    = liveBpm    || '—';
       document.getElementById('mBreath').textContent = liveBreath || '—';
 
@@ -366,12 +369,16 @@ async function submitManual() {
     sym_chest_pain:       document.getElementById('sChestPain').checked       ? 1 : 0,
     sym_confusion:        document.getElementById('sConfusion').checked       ? 1 : 0,
     sym_nausea:           document.getElementById('sNausea').checked          ? 1 : 0,
+    sym_sweating:         document.getElementById('sSweating').checked        ? 1 : 0,
+    sym_pale_skin:        document.getElementById('sPaleSkin').checked        ? 1 : 0,
+    sym_rapid_heart:      document.getElementById('sRapidHeart').checked      ? 1 : 0,
   };
 
   if (isCameraOn && liveBpm > 0) {
     data._bpm    = liveBpm;
     data._breath = liveBreath;
     data._spo2   = liveSpO2;
+    data._sweat  = VITALS.isRunning() && document.getElementById('vSweat').textContent.includes('YES') ? 1 : 0;
     if (liveBpm > 120) data.hypertension = 1;
   }
 
@@ -397,7 +404,8 @@ function resetForm() {
   document.getElementById('fWorkType').value     = 'Private';
   document.getElementById('fSmoking').value      = 'never smoked';
   ['sFaceDrooping','sArmWeakness','sSpeechDifficulty','sSevereHeadache',
-   'sVisionBlur','sDizziness','sNumbness','sChestPain','sConfusion','sNausea'
+   'sVisionBlur','sDizziness','sNumbness','sChestPain','sConfusion','sNausea',
+   'sSweating','sPaleSkin','sRapidHeart'
   ].forEach(id => document.getElementById(id).checked = false);
 }
 
