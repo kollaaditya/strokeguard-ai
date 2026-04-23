@@ -161,3 +161,9 @@ body { font-family: 'Inter', sans-serif; background: #f8f9fa; color: #212529; }
   table { font-size: 0.75rem; }
   .table-responsive { -webkit-overflow-scrolling: touch; }
 }
+
+/* ===== Symptoms Checklist ===== */
+.symptom-check { background: #f8f9fa; border-radius: 8px; padding: 6px 10px; border: 1px solid #e9ecef; transition: all 0.2s; }
+.symptom-check:has(input:checked) { background: rgba(220,53,69,0.08); border-color: #dc3545; }
+.symptom-check .form-check-input:checked { background-color: #dc3545; border-color: #dc3545; }
+.symptom-check label { cursor: pointer; font-size: 0.82rem; }

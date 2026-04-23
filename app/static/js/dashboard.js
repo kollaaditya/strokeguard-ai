@@ -355,6 +355,17 @@ async function submitManual() {
     work_type:         document.getElementById('fWorkType').value,
     Residence_type:    'Urban',
     smoking_status:    document.getElementById('fSmoking').value,
+    // Symptoms
+    sym_face_drooping:    document.getElementById('sFaceDrooping').checked    ? 1 : 0,
+    sym_arm_weakness:     document.getElementById('sArmWeakness').checked     ? 1 : 0,
+    sym_speech_difficulty:document.getElementById('sSpeechDifficulty').checked? 1 : 0,
+    sym_severe_headache:  document.getElementById('sSevereHeadache').checked  ? 1 : 0,
+    sym_vision_blur:      document.getElementById('sVisionBlur').checked      ? 1 : 0,
+    sym_dizziness:        document.getElementById('sDizziness').checked       ? 1 : 0,
+    sym_numbness:         document.getElementById('sNumbness').checked        ? 1 : 0,
+    sym_chest_pain:       document.getElementById('sChestPain').checked       ? 1 : 0,
+    sym_confusion:        document.getElementById('sConfusion').checked       ? 1 : 0,
+    sym_nausea:           document.getElementById('sNausea').checked          ? 1 : 0,
   };
 
   if (isCameraOn && liveBpm > 0) {
@@ -377,14 +388,17 @@ async function submitManual() {
 }
 
 function resetForm() {
-  document.getElementById('fAge').value         = 45;
-  document.getElementById('fGlucose').value     = 100;
-  document.getElementById('fBmi').value         = 25;
-  document.getElementById('fHypertension').value= 0;
-  document.getElementById('fHeartDisease').value= 0;
-  document.getElementById('fMarried').value     = 'Yes';
-  document.getElementById('fWorkType').value    = 'Private';
-  document.getElementById('fSmoking').value     = 'never smoked';
+  document.getElementById('fAge').value          = 45;
+  document.getElementById('fGlucose').value      = 100;
+  document.getElementById('fBmi').value          = 25;
+  document.getElementById('fHypertension').value = 0;
+  document.getElementById('fHeartDisease').value = 0;
+  document.getElementById('fMarried').value      = 'Yes';
+  document.getElementById('fWorkType').value     = 'Private';
+  document.getElementById('fSmoking').value      = 'never smoked';
+  ['sFaceDrooping','sArmWeakness','sSpeechDifficulty','sSevereHeadache',
+   'sVisionBlur','sDizziness','sNumbness','sChestPain','sConfusion','sNausea'
+  ].forEach(id => document.getElementById(id).checked = false);
 }
 
 function redirectHttps() {

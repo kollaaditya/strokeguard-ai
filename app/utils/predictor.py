@@ -81,6 +81,23 @@ def get_advice(risk_level: str, data: dict) -> list:
     if br > 25:
         advice.append(f"🌬 Rapid breathing ({int(br)} br/min) — try to calm down and breathe slowly.")
 
+    # Active symptoms advice
+    sym_map = {
+        "sym_face_drooping":     "Face drooping detected — this is a critical stroke warning sign.",
+        "sym_arm_weakness":      "Arm weakness detected — raise both arms, if one drifts down call 108.",
+        "sym_speech_difficulty": "Speech difficulty detected — repeat a simple sentence to check.",
+        "sym_severe_headache":   "Sudden severe headache — could indicate a brain bleed.",
+        "sym_vision_blur":       "Blurred vision — sudden vision loss is a stroke warning.",
+        "sym_confusion":         "Confusion detected — do not drive, call for help immediately.",
+        "sym_numbness":          "Numbness on one side of body — classic stroke symptom.",
+        "sym_dizziness":         "Dizziness — sit down immediately to avoid falling.",
+        "sym_chest_pain":        "Chest pain — could indicate cardiac event alongside stroke.",
+        "sym_nausea":            "Nausea with other symptoms — seek medical attention.",
+    }
+    for key, msg in sym_map.items():
+        if int(data.get(key, 0)) == 1:
+            advice.append(f"⚠️ {msg}")
+
     return advice
 
 
@@ -129,23 +146,30 @@ def predict(data: dict) -> dict:
     X_scaled = scaler.transform(X)
     prob = float(model.predict_proba(X_scaled)[0][1])
 
-    # Fine-tune with live camera vitals only when clearly abnormal
+    # ── Symptom-based adjustment ──────────────────────────────────
+    # FAST symptoms (Face, Arms, Speech, Time) — strongest stroke indicators
+    fast_score = (
+        int(data.get("sym_face_drooping",     0)) * 0.20 +
+        int(data.get("sym_arm_weakness",      0)) * 0.18 +
+        int(data.get("sym_speech_difficulty", 0)) * 0.18 +
+        int(data.get("sym_severe_headache",   0)) * 0.12 +
+        int(data.get("sym_vision_blur",       0)) * 0.10 +
+        int(data.get("sym_confusion",         0)) * 0.10 +
+        int(data.get("sym_numbness",          0)) * 0.08 +
+        int(data.get("sym_dizziness",         0)) * 0.06 +
+        int(data.get("sym_chest_pain",        0)) * 0.05 +
+        int(data.get("sym_nausea",            0)) * 0.03
+    )
+    prob = min(0.97, prob + fast_score)
+
+    # ── Camera vitals adjustment (only severely abnormal) ─────────
     bpm    = float(data.get("_bpm",    0))
     spo2   = float(data.get("_spo2",   99))
     breath = float(data.get("_breath", 0))
-
-    if bpm > 0:
-        if bpm > 120:                          # severe tachycardia only
-            prob = min(0.95, prob + 0.05)
-        elif bpm < 45:                         # severe bradycardia only
-            prob = min(0.95, prob + 0.04)
-        # normal range 50-100: no adjustment
-
-    if spo2 > 0 and spo2 < 92:               # only dangerously low SpO2
-        prob = min(0.95, prob + 0.06)
-
-    if breath > 0 and breath > 28:            # only very rapid breathing
-        prob = min(0.95, prob + 0.03)
+    if bpm > 120:             prob = min(0.97, prob + 0.05)
+    elif bpm > 0 and bpm < 45: prob = min(0.97, prob + 0.04)
+    if spo2 > 0 and spo2 < 92: prob = min(0.97, prob + 0.06)
+    if breath > 28:            prob = min(0.97, prob + 0.03)
 
     risk   = classify_risk(prob)
     advice = get_advice(risk, data)

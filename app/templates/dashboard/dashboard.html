@@ -222,13 +222,16 @@
     <!-- RIGHT COLUMN -->
     <div class="col-lg-4">
 
-      <!-- Manual Input Form -->
+      <!-- Symptoms + Health Input -->
       <div class="card border-0 shadow-sm">
         <div class="card-header bg-white border-0 pt-3 pb-0">
-          <h6 class="fw-bold mb-0"><i class="fas fa-edit me-2 text-secondary"></i>Manual Health Input</h6>
+          <h6 class="fw-bold mb-0"><i class="fas fa-stethoscope me-2 text-danger"></i>Symptoms & Health Data</h6>
         </div>
         <div class="card-body">
           <form id="manualForm">
+
+            <!-- STEP 1: Basic Info -->
+            <p class="text-muted small fw-semibold mb-2 mt-1">📋 Basic Information</p>
             <div class="row g-2">
               <div class="col-6">
                 <label class="form-label small fw-semibold">Age</label>
@@ -288,9 +291,75 @@
                 </select>
               </div>
             </div>
+
+            <!-- STEP 2: Current Symptoms -->
+            <p class="text-muted small fw-semibold mb-2 mt-3">🤒 Current Symptoms <span class="text-danger">(check all that apply)</span></p>
+            <div class="row g-2">
+              <div class="col-6">
+                <div class="form-check symptom-check">
+                  <input class="form-check-input" type="checkbox" id="sFaceDrooping" value="1">
+                  <label class="form-check-label small" for="sFaceDrooping">😶 Face Drooping</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check symptom-check">
+                  <input class="form-check-input" type="checkbox" id="sArmWeakness" value="1">
+                  <label class="form-check-label small" for="sArmWeakness">💪 Arm Weakness</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check symptom-check">
+                  <input class="form-check-input" type="checkbox" id="sSpeechDifficulty" value="1">
+                  <label class="form-check-label small" for="sSpeechDifficulty">🗣️ Speech Difficulty</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check symptom-check">
+                  <input class="form-check-input" type="checkbox" id="sSevereHeadache" value="1">
+                  <label class="form-check-label small" for="sSevereHeadache">🤕 Severe Headache</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check symptom-check">
+                  <input class="form-check-input" type="checkbox" id="sVisionBlur" value="1">
+                  <label class="form-check-label small" for="sVisionBlur">👁️ Blurred Vision</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check symptom-check">
+                  <input class="form-check-input" type="checkbox" id="sDizziness" value="1">
+                  <label class="form-check-label small" for="sDizziness">😵 Dizziness</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check symptom-check">
+                  <input class="form-check-input" type="checkbox" id="sNumbness" value="1">
+                  <label class="form-check-label small" for="sNumbness">🖐️ Numbness</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check symptom-check">
+                  <input class="form-check-input" type="checkbox" id="sChestPain" value="1">
+                  <label class="form-check-label small" for="sChestPain">💔 Chest Pain</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check symptom-check">
+                  <input class="form-check-input" type="checkbox" id="sConfusion" value="1">
+                  <label class="form-check-label small" for="sConfusion">🧠 Confusion</label>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="form-check symptom-check">
+                  <input class="form-check-input" type="checkbox" id="sNausea" value="1">
+                  <label class="form-check-label small" for="sNausea">🤢 Nausea</label>
+                </div>
+              </div>
+            </div>
+
             <div class="mt-3 d-flex gap-2">
-              <button type="button" class="btn btn-primary btn-sm px-4" onclick="submitManual()">
-                <i class="fas fa-search me-1"></i>Predict Risk
+              <button type="button" class="btn btn-danger btn-sm px-4" onclick="submitManual()">
+                <i class="fas fa-heartbeat me-1"></i>Predict Risk
               </button>
               <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetForm()">
                 <i class="fas fa-undo me-1"></i>Reset
